@@ -1,0 +1,86 @@
+SLIDING WINDOW 
+
+SENDER CODE:
+
+import time
+def create_frames(window_size, message):
+    frames = []
+    for i in range(len(message)):
+        frames.append((i % window_size, message[i]))
+    return frames
+def send_frames(frames, start, window_size):
+    print("Sending frames:")
+    with open("Sender_Buffer.txt", "w") as f:
+        for i in range(start, start + window_size):
+            if i < len(frames):
+                print(f"Frame No: {frames[i][0]}, Data: {frames[i][1]}")
+                f.write(f"{frames[i][0]} {frames[i][1]}\n")
+def check_acknowledgments(start, window_size):
+    with open("Receiver_Buffer.txt", "r") as f:
+        acks = f.readlines()
+    acks = [int(x.strip()) for x in acks]
+
+    if acks[0] == -1:  
+        print("NACK received, resending frames.")
+        return start
+    else:
+        print("ACK received for frames:", acks)
+        return start + len(acks)
+def main():
+    window_size = int(input("Enter the window size: "))
+    message = input("Enter the text message: ")
+    frames = create_frames(window_size, message)
+    current_frame = 0
+    while current_frame < len(frames):
+        send_frames(frames, current_frame, window_size)
+        print("Waiting for acknowledgment...")
+        time.sleep(2)  
+        current_frame = check_acknowledgments(current_frame, window_size)
+if __name__ == "__main__":
+    main()
+
+
+
+
+
+
+
+RECEIVER CODE:
+
+import time
+
+def read_sender_buffer():
+    Sender_Buffer.txt
+    with open('Sender_Buffer.txt', 'r') as sender_file:
+        frames = sender_file.readlines()
+    return frames
+def write_receiver_buffer(acknowledgments):
+   open('Receiver_Buffer.txt', 'w') as receiver_file:
+        for ack in acknowledgments:
+            receiver_file.write(f"{ack}\n")
+
+def receiver():
+    print("Reading frames from Sender_Buffer...")
+    frames = read_sender_buffer()
+    expected_frame_no = 0
+    acknowledgments = []
+    # Process each frame
+    for frame in frames:
+        frame_no, data = frame.strip().split(' ', 1)  
+        frame_no = int(frame_no)
+        if frame_no == expected_frame_no:
+            print(f"Received expected frame: {frame_no}, Data: {data}")
+            acknowledgments.append(frame_no)  # Add ACK for received frame
+            expected_frame_no += 1  # Increment expected frame number
+        else:
+            print(f"Error in frame: {frame_no}, Expected: {expected_frame_no}. Sending NACK.")
+            acknowledgments.append(-1)  
+            break  
+    write_receiver_buffer(acknowledgments)
+    print("Acknowledgments sent to Sender.")
+    return
+if __name__ == "__main__":
+    while True:
+        receiver()
+        time.sleep(2)  
+        break  
